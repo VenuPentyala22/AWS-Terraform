@@ -146,21 +146,6 @@ variable "create_eip" {
 }
 
 # ---------------------------------------------------------------------------
-# User data — bring your own template + vars
-# ---------------------------------------------------------------------------
-variable "user_data_template" {
-  description = "Path to a templatefile() user-data script (relative to the root config). Null skips user-data."
-  type        = string
-  default     = null
-}
-
-variable "user_data_vars" {
-  description = "Variables passed into the user_data_template"
-  type        = map(string)
-  default     = {}
-}
-
-# ---------------------------------------------------------------------------
 # Security group rules — see modules/security_group/variables.tf for shape
 # ---------------------------------------------------------------------------
 variable "ingress_rules" {

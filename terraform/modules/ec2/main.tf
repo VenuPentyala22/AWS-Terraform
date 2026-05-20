@@ -35,9 +35,6 @@ resource "aws_instance" "this" {
     http_put_response_hop_limit = var.imds_hop_limit
   }
 
-  user_data                   = var.user_data != null ? base64encode(var.user_data) : null
-  user_data_replace_on_change = var.user_data_replace_on_change
-
   tags = merge(var.tags, {
     Name = var.name
   })

@@ -46,12 +46,6 @@ ingress_rules = {
   }
 }
 
-# Bring-your-own user-data. Null to skip.
-user_data_template = "./user_data.sh"
-user_data_vars = {
-  project_name = "my-project"
-}
-
 tags = {
   Owner = "platform-team"
 }

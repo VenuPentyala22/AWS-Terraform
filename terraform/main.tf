@@ -7,10 +7,6 @@ locals {
 
   resolved_vpc_id = coalesce(var.vpc_id, one(data.aws_vpc.selected[*].id))
   resolved_ami_id = coalesce(var.ami_id, one(data.aws_ami.selected[*].id))
-
-  rendered_user_data = var.user_data_template == null ? null : templatefile(
-    var.user_data_template, var.user_data_vars
-  )
 }
 
 # ---------------------------------------------------------------------------
@@ -60,7 +56,6 @@ module "ec2" {
   iam_instance_profile = var.iam_instance_profile
 
   public_key = var.public_key
-  user_data  = local.rendered_user_data
 
   root_volume_type       = var.root_volume_type
   root_volume_size       = var.root_volume_size

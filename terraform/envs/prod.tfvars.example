@@ -45,11 +45,6 @@ egress_rules = {
   }
 }
 
-user_data_template = "./user_data.sh"
-user_data_vars = {
-  project_name = "my-project"
-}
-
 tags = {
   Owner       = "platform-team"
   CostCenter  = "REPLACE-ME"

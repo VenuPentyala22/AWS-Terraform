@@ -119,7 +119,6 @@ jobs:
         if: github.event.inputs.action != 'destroy'
         env:
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
-          TF_VAR_public_key: ${{ secrets.EC2_SSH_PUBLIC_KEY }}
         run: |
           terraform plan \
             -input=false \
@@ -134,7 +133,6 @@ jobs:
           github.event.inputs.action == 'apply'
         env:
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
-          TF_VAR_public_key: ${{ secrets.EC2_SSH_PUBLIC_KEY }}
         run: |
           terraform apply \
             -input=false \
@@ -146,7 +144,6 @@ jobs:
         if: github.event.inputs.action == 'destroy'
         env:
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
-          TF_VAR_public_key: ${{ secrets.EC2_SSH_PUBLIC_KEY }}
         run: |
           terraform destroy \
             -input=false \

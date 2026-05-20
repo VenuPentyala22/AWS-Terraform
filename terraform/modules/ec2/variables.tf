@@ -48,18 +48,6 @@ variable "public_key" {
   sensitive   = true
 }
 
-variable "user_data" {
-  description = "User-data script content (raw, not base64). Null skips user-data."
-  type        = string
-  default     = null
-}
-
-variable "user_data_replace_on_change" {
-  description = "Force instance replacement when user_data changes (vs in-place no-op)."
-  type        = bool
-  default     = true
-}
-
 variable "root_volume_type" {
   description = "Root EBS volume type"
   type        = string

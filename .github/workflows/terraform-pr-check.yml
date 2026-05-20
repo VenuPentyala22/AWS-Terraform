@@ -89,7 +89,6 @@ jobs:
         id: plan
         env:
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
-          TF_VAR_public_key: ${{ secrets.EC2_SSH_PUBLIC_KEY }}
         run: |
           terraform plan \
             -input=false \

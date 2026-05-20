@@ -13,7 +13,6 @@ terraform/
   providers.tf                # AWS provider, default_tags
   main.tf                     # composes modules
   variables.tf  outputs.tf
-  user_data.sh                # example user-data template
   backend-config/
     <env>.hcl                 # bucket / key / dynamodb_table per env
   envs/
@@ -36,7 +35,8 @@ One-time, per AWS account:
 In each GitHub Environment (`development`, `dev`, `staging`, `prod`):
 
 - Secret `AWS_ROLE_ARN` — the OIDC role ARN.
-- Secret `EC2_SSH_PUBLIC_KEY` — optional, only if you want a key pair.
+
+Resource-specific secrets (SSH keys, DB passwords, etc.) belong in the GitHub Environment too — pass them into Terraform as `TF_VAR_<name>` env vars on the relevant workflow step.
 
 ## Setup
 
@@ -126,8 +126,6 @@ Notable inputs:
 
 - `ami_id`, `instance_type`, `security_group_ids` — required.
 - `public_key` — null disables key-pair creation.
-- `user_data` — raw script content; module handles base64.
-- `user_data_replace_on_change` — defaults true (treat user-data as immutable).
 - `imdsv2_required` (default true), `imds_hop_limit` (default 1, bump to 2 for containers).
 - `root_volume_kms_key_id`, `detailed_monitoring`, `ebs_optimized`, `create_eip`.
 
