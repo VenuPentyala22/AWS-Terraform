@@ -9,7 +9,7 @@ on:
       - ".github/workflows/terraform-pr-check.yml"
 
 env:
-  TF_VERSION: "1.7.0"
+  TF_VERSION: "1.10.5"
   TF_WORKING_DIR: "./terraform"
   AWS_REGION: "us-east-1"
   # Convention: backend config per env lives at terraform/backend-config/<env>.hcl

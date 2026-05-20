@@ -1,5 +1,5 @@
-bucket         = "REPLACE-ME-terraform-state-dev"
-key            = "infra/dev/terraform.tfstate"
-region         = "us-east-1"
-dynamodb_table = "terraform-state-lock"
-encrypt        = true
+bucket       = "REPLACE-ME-terraform-state-dev"
+key          = "infra/dev/terraform.tfstate"
+region       = "us-east-1"
+encrypt      = true
+use_lockfile = true # S3 native state locking (Terraform >= 1.10)

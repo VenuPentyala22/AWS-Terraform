@@ -4,7 +4,7 @@ Reusable Terraform modules and GitHub Actions workflows for deploying AWS resour
 
 ## Layout
 
-```
+```text
 .github/workflows/
   terraform-pr-check.yml     # validate + plan, comments on PR
   terraform-deploy.yml        # apply / destroy with env input
@@ -14,7 +14,7 @@ terraform/
   main.tf                     # composes modules
   variables.tf  outputs.tf
   backend-config/
-    <env>.hcl                 # bucket / key / dynamodb_table per env
+    <env>.hcl                 # bucket / key per env (S3 native locking)
   envs/
     <env>.tfvars              # variable values per env
   modules/
@@ -28,9 +28,8 @@ terraform/
 
 One-time, per AWS account:
 
-- **S3 bucket** for state (versioning + encryption enabled).
-- **DynamoDB table** for state locking, partition key `LockID` (string).
-- **IAM role** assumable by GitHub Actions via OIDC. Trust policy must allow `token.actions.githubusercontent.com` for your repo. Permissions: whatever the resources need + `s3:*` on the state bucket prefix + `dynamodb:*` on the lock table.
+- **S3 bucket** for state (versioning + encryption enabled). State locking uses S3 native conditional writes (`use_lockfile = true`) — no DynamoDB table needed.
+- **IAM role** assumable by GitHub Actions via OIDC. Trust policy must allow `token.actions.githubusercontent.com` for your repo. Permissions: whatever the resources need + `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket` on the state bucket prefix.
 
 In each GitHub Environment (`development`, `dev`, `staging`, `prod`):
 
@@ -45,7 +44,7 @@ Resource-specific secrets (SSH keys, DB passwords, etc.) belong in the GitHub En
 cp terraform/backend-config/dev.hcl.example terraform/backend-config/dev.hcl
 cp terraform/envs/dev.tfvars.example         terraform/envs/dev.tfvars
 
-# 2. Edit the bucket / dynamodb_table in dev.hcl
+# 2. Edit the bucket name in dev.hcl
 # 3. Edit project_name, VPC/subnet, ingress_rules in dev.tfvars
 
 # 4. Init (locally)
@@ -76,8 +75,8 @@ Runs on PRs touching `terraform/**`:
 
 Runs on:
 
-- **Push to `main`** — applies the `prod` config automatically.
-- **Manual dispatch** — pick `action` (`apply` | `destroy`), `environment` (`dev` | `staging` | `prod`), and (for destroy) type the env name into `confirm`.
+- **Push to `main`** — auto-applies to `dev` only. Staging and prod never auto-deploy.
+- **Manual dispatch** — pick `action` (`apply` | `destroy`), `environment` (`dev` | `staging` | `prod`), and (for destroy) type the env name into `confirm`. Promotions to staging/prod always go through this path.
 
 The workflow loads `backend-config/<env>.hcl` and `envs/<env>.tfvars` automatically and serializes runs per environment.
 
@@ -85,19 +84,19 @@ The workflow loads `backend-config/<env>.hcl` and `envs/<env>.tfvars` automatica
 
 1. Create `terraform/modules/<thing>/` with `main.tf`, `variables.tf`, `outputs.tf`.
 2. Take inputs only (no project-specific names, no hardcoded ports / AMIs).
-3. Compose it in the root [main.tf](terraform/main.tf):
+3. Compose it in the root [main.tf](terraform/main.tf) — example:
 
-```hcl
-module "rds" {
-  source = "./modules/rds"
+   ```hcl
+   module "rds" {
+     source = "./modules/rds"
 
-  name       = "${var.project_name}-${var.environment}"
-  vpc_id     = local.resolved_vpc_id
-  subnet_ids = var.private_subnet_ids
-  # ...
-  tags = local.common_tags
-}
-```
+     name       = "${var.project_name}-${var.environment}"
+     vpc_id     = local.resolved_vpc_id
+     subnet_ids = var.private_subnet_ids
+     # ...
+     tags = local.common_tags
+   }
+   ```
 
 4. Reuse `modules/security_group` for its SG (pass in the rules).
 5. Add any new inputs to `variables.tf` + the env tfvars.
@@ -108,13 +107,13 @@ module "rds" {
 
 Generic SG with per-rule resources (`aws_vpc_security_group_ingress_rule` / `_egress_rule`) so changing one rule doesn't replan the whole SG. Rules are a map keyed by a stable slug — Terraform addresses stay stable across rule reorderings.
 
-| Input            | Type               | Notes                                                                   |
-| ---------------- | ------------------ | ----------------------------------------------------------------------- |
-| `name`           | string             | Must be unique in the VPC.                                              |
-| `vpc_id`         | string             |                                                                         |
-| `ingress_rules`  | `map(object(...))` | Exactly one of `cidr_ipv4`, `cidr_ipv6`, `referenced_security_group_id`, or `prefix_list_id` per rule (validated). |
-| `egress_rules`   | `map(object(...))` | Defaults to allow-all-IPv4-out.                                         |
-| `tags`           | `map(string)`      |                                                                         |
+Inputs:
+
+- `name` (string) — must be unique in the VPC.
+- `vpc_id` (string)
+- `ingress_rules` (`map(object(...))`) — exactly one of `cidr_ipv4`, `cidr_ipv6`, `referenced_security_group_id`, or `prefix_list_id` per rule (validated).
+- `egress_rules` (`map(object(...))`) — defaults to allow-all-IPv4-out.
+- `tags` (`map(string)`)
 
 Outputs: `id`, `arn`, `name`.
 
@@ -134,7 +133,7 @@ Outputs: `instance_id`, `instance_arn`, `private_ip`, `public_ip`, `public_dns`,
 ## Security notes
 
 - **OIDC, not access keys.** Workflows assume a role via `aws-actions/configure-aws-credentials@v4`; no long-lived AWS credentials in GitHub.
-- **State is encrypted** (backend `encrypt = true`) and locked via DynamoDB.
+- **State is encrypted** (backend `encrypt = true`) and locked via S3 native locking (`use_lockfile = true`).
 - **No secrets in tfvars.** SSH keys and similar flow through `TF_VAR_*` env vars from secrets.
 - **Destroy requires confirmation** — the `confirm` input must equal the environment name.
 - **IMDSv2 enforced** by default on EC2.
@@ -153,5 +152,5 @@ terraform apply tfplan
 
 ## Versions
 
-- Terraform: `>= 1.3.0` (pinned to `1.7.0` in CI)
+- Terraform: `>= 1.10.0` (required for S3 native state locking; pinned to `1.10.5` in CI)
 - AWS provider: `~> 5.0`

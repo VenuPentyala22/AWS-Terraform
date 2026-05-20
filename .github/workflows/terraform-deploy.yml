@@ -36,13 +36,13 @@ on:
         default: ""
 
 env:
-  TF_VERSION: "1.7.0"
+  TF_VERSION: "1.10.5"
   TF_WORKING_DIR: "./terraform"
 
 # Serialize deploys to the same environment. State lock would catch this too,
 # but failing fast in CI is better than waiting on a stale lock.
 concurrency:
-  group: terraform-deploy-${{ github.event.inputs.environment || 'prod' }}
+  group: terraform-deploy-${{ github.event.inputs.environment || 'dev' }}
   cancel-in-progress: false
 
 permissions:
@@ -51,16 +51,16 @@ permissions:
 
 jobs:
   deploy:
-    name: Terraform ${{ github.event.inputs.action || 'apply' }} (${{ github.event.inputs.environment || 'prod' }})
+    name: Terraform ${{ github.event.inputs.action || 'apply' }} (${{ github.event.inputs.environment || 'dev' }})
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'prod' }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
 
     defaults:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
 
     env:
-      TF_ENV: ${{ github.event.inputs.environment || 'prod' }}
+      TF_ENV: ${{ github.event.inputs.environment || 'dev' }}
       AWS_REGION: ${{ github.event.inputs.aws_region || 'us-east-1' }}
 
     steps:
