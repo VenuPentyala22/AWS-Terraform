@@ -1,0 +1,56 @@
+aws_region   = "us-east-1"
+project_name = "my-project"
+environment  = "prod"
+
+instance_type    = "t3.small"
+root_volume_size = 50
+create_eip       = true
+
+vpc_id    = "vpc-REPLACE-ME"
+subnet_id = "subnet-REPLACE-ME"
+
+ami_id = null
+ami_owners = ["amazon"]
+ami_filters = [
+  { name = "name", values = ["al2023-ami-*-x86_64"] },
+  { name = "virtualization-type", values = ["hvm"] },
+]
+
+ingress_rules = {
+  https = {
+    description = "HTTPS public"
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_ipv4   = "0.0.0.0/0"
+  }
+  # SSH intentionally omitted — use SSM Session Manager in prod.
+}
+
+# Tight egress for prod — override the allow-all default.
+egress_rules = {
+  https_out = {
+    description = "HTTPS egress"
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_ipv4   = "0.0.0.0/0"
+  }
+  dns_udp = {
+    description = "DNS"
+    protocol    = "udp"
+    from_port   = 53
+    to_port     = 53
+    cidr_ipv4   = "0.0.0.0/0"
+  }
+}
+
+user_data_template = "./user_data.sh"
+user_data_vars = {
+  project_name = "my-project"
+}
+
+tags = {
+  Owner       = "platform-team"
+  CostCenter  = "REPLACE-ME"
+}

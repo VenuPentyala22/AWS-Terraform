@@ -1,0 +1,57 @@
+# Copy to dev.tfvars and edit. Commit dev.tfvars only if it has no secrets.
+# Anything sensitive (SSH keys, passwords) goes through TF_VAR_<name> in CI.
+
+aws_region   = "us-east-1"
+project_name = "my-project"
+environment  = "dev"
+
+instance_type    = "t3.micro"
+root_volume_size = 20
+create_eip       = false
+
+# Leave null to fall back to default VPC / auto-picked subnet.
+vpc_id    = null
+subnet_id = null
+
+# Pin an AMI, or leave null and let ami_owners + ami_filters resolve one.
+ami_id     = null
+ami_owners = ["amazon"]
+ami_filters = [
+  { name = "name", values = ["al2023-ami-*-x86_64"] },
+  { name = "virtualization-type", values = ["hvm"] },
+]
+
+# Map-keyed rules — keys are stable Terraform addresses.
+ingress_rules = {
+  ssh = {
+    description = "SSH from my IP"
+    protocol    = "tcp"
+    from_port   = 22
+    to_port     = 22
+    cidr_ipv4   = "203.0.113.0/32" # ← change to your IP
+  }
+  http = {
+    description = "HTTP"
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_ipv4   = "0.0.0.0/0"
+  }
+  https = {
+    description = "HTTPS"
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_ipv4   = "0.0.0.0/0"
+  }
+}
+
+# Bring-your-own user-data. Null to skip.
+user_data_template = "./user_data.sh"
+user_data_vars = {
+  project_name = "my-project"
+}
+
+tags = {
+  Owner = "platform-team"
+}
